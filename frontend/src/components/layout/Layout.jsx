@@ -1,21 +1,7 @@
-/**
- * Layout + Sidebar co-locate nello stesso file.
- *
- * Usato da AlertsPage (e pagine future). Home e StockPage
- * usano la propria struttura inline in App.jsx con AppSidebar.
- *
- * Layout:
- *   flex h-screen overflow-hidden
- *   └─ Sidebar (240px fissi)
- *   └─ colonna destra
- *        ├─ NavBar (topbar h-12, si auto-configura in base alla route)
- *        └─ area contenuto (flex-1, overflow-y-auto)
- *
- * Sidebar accetta `ticker` opzionale per evidenziare il titolo attivo
- * nella watchlist (placeholder per futura integrazione nel componente Watchlist).
- */
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
 import NavBar from './NavBar';
 import ThemeToggle from './ThemeToggle';
 import Watchlist from '../Watchlist';
@@ -25,28 +11,38 @@ import { api } from '../../lib/api';
 // Icons
 // ---------------------------------------------------------------------------
 
-function HomeIcon() {
+function HomeIcon({ className = 'w-5 h-5' }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 shrink-0">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
       <path fillRule="evenodd" d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" clipRule="evenodd" />
     </svg>
   );
 }
 
-function BellIcon() {
+function BellIcon({ className = 'w-5 h-5' }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 shrink-0">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
       <path fillRule="evenodd" d="M10 2a6 6 0 0 0-6 6v2.586l-.707.707A1 1 0 0 0 4 13h12a1 1 0 0 0 .707-1.707L16 10.586V8a6 6 0 0 0-6-6ZM10 18a3 3 0 0 1-2.83-2h5.66A3 3 0 0 1 10 18Z" clipRule="evenodd" />
     </svg>
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+      <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Sidebar
+// Sidebar content — shared between desktop panel and mobile drawer
 // ---------------------------------------------------------------------------
 
-export function Sidebar({ ticker = null }) {
+function SidebarContent({ onNav }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
@@ -56,15 +52,21 @@ export function Sidebar({ ticker = null }) {
   const activeAlertCount = alerts.filter((a) => a.active).length;
 
   const navItems = [
-    { to: '/',       icon: <HomeIcon />, label: 'Home' },
-    { to: '/alerts', icon: <BellIcon />, label: 'Alert', badge: activeAlertCount },
+    { to: '/', icon: <HomeIcon className="w-4 h-4 shrink-0" />, label: 'Home' },
+    { to: '/alerts', icon: <BellIcon className="w-4 h-4 shrink-0" />, label: 'Alert', badge: activeAlertCount },
   ];
 
+  async function handleSignOut() {
+    await signOut();
+    navigate('/login', { replace: true });
+  }
+
   return (
-    <aside className="w-60 shrink-0 h-screen flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 overflow-hidden">
+    <>
       {/* Logo */}
       <Link
         to="/"
+        onClick={onNav}
         className="flex items-center h-12 px-5 border-b border-slate-200 dark:border-slate-800 shrink-0"
       >
         <span className="text-sm font-medium tracking-tight text-slate-900 dark:text-slate-100">
@@ -80,6 +82,7 @@ export function Sidebar({ ticker = null }) {
             <Link
               key={to}
               to={to}
+              onClick={onNav}
               className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
                 isActive
                   ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400'
@@ -103,12 +106,29 @@ export function Sidebar({ ticker = null }) {
         <Watchlist inSidebar />
       </div>
 
+      {/* User / logout */}
+      <div className="shrink-0 px-3 py-2 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate" title={user?.email}>
+              {user?.email}
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="shrink-0 text-xs text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+          >
+            Esci
+          </button>
+        </div>
+      </div>
+
       {/* Footer */}
-      <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <div className="shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <span className="text-xs text-slate-400 dark:text-slate-600">v2.1</span>
         <ThemeToggle />
       </div>
-    </aside>
+    </>
   );
 }
 
@@ -116,16 +136,93 @@ export function Sidebar({ ticker = null }) {
 // Layout
 // ---------------------------------------------------------------------------
 
-export default function Layout({ children, ticker = null }) {
+export default function Layout({ children }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+
+  const { data: alerts = [] } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: api.getAlerts,
+    staleTime: 60_000,
+  });
+  const activeAlertCount = alerts.filter((a) => a.active).length;
+
+  const bottomNavItems = [
+    { to: '/', label: 'Home', icon: HomeIcon },
+    { to: '/alerts', label: 'Alert', icon: BellIcon, badge: activeAlertCount },
+  ];
+
+  function closeDrawer() {
+    setDrawerOpen(false);
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <Sidebar ticker={ticker} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+
+      {/* Mobile overlay */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/50 md:hidden"
+          onClick={closeDrawer}
+        />
+      )}
+
+      {/* Sidebar — desktop: static panel; mobile: fixed drawer */}
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-30 w-64 flex flex-col',
+          'bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800',
+          'transition-transform duration-200 ease-in-out',
+          'md:relative md:w-60 md:translate-x-0 md:shrink-0',
+          drawerOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+      >
+        <SidebarContent onNav={closeDrawer} />
+      </aside>
+
+      {/* Right column */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <NavBar />
-        <main className="flex-1 overflow-y-auto">
+        {/* Content — pb-16 on mobile makes room for bottom nav */}
+        <div className="flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
           {children}
-        </main>
+        </div>
       </div>
+
+      {/* Bottom navigation — mobile only */}
+      <nav className="fixed bottom-0 inset-x-0 z-10 h-16 flex items-stretch md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+        {bottomNavItems.map(({ to, label, icon: Icon, badge }) => {
+          const isActive = location.pathname === to;
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative ${
+                isActive
+                  ? 'text-sky-500 dark:text-sky-400'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{label}</span>
+              {badge > 0 && (
+                <span className="absolute top-2 left-[calc(50%+6px)] min-w-[14px] h-[14px] px-[3px] text-[8px] font-bold bg-rose-500 text-white rounded-full flex items-center justify-center leading-none">
+                  {badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+
+        {/* Hamburger */}
+        <button
+          onClick={() => setDrawerOpen((o) => !o)}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 active:text-slate-700 dark:active:text-slate-200"
+        >
+          <MenuIcon />
+          <span className="text-[10px] font-medium">Menu</span>
+        </button>
+      </nav>
     </div>
   );
 }

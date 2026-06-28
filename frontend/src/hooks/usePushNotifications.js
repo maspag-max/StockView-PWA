@@ -13,41 +13,37 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export function usePushNotifications() {
-  const isSupported =
-    typeof window !== 'undefined' &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    'Notification' in window;
-
+  const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check current subscription state on mount
   useEffect(() => {
-    if (!isSupported) {
+    const supported =
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
+
+    setIsSupported(supported);
+
+    if (!supported) {
       setIsLoading(false);
       return;
     }
+
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
       .then((sub) => setIsSubscribed(!!sub))
       .catch(() => {})
       .finally(() => setIsLoading(false));
-  }, [isSupported]);
+  }, []);
 
   async function subscribe() {
-    if (!isSupported) return;
     setIsLoading(true);
     try {
-      // Request notification permission if not yet granted
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        throw new Error('Permesso notifiche negato.');
-      }
+      if (permission !== 'granted') throw new Error('Permesso notifiche negato.');
 
-      // Fetch VAPID public key (no auth needed)
       const { publicKey } = await fetch('/api/push/vapid-public-key').then((r) => r.json());
-
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -62,7 +58,6 @@ export function usePushNotifications() {
   }
 
   async function unsubscribe() {
-    if (!isSupported) return;
     setIsLoading(true);
     try {
       const reg = await navigator.serviceWorker.ready;

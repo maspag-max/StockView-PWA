@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     alert_email_password: str = Field(default="")
     alert_check_time: str = Field(default="18:30")
 
+    # Web Push (VAPID)
+    vapid_public_key: str = Field(default="")
+    vapid_private_key: str = Field(default="")  # base64-encoded PEM
+    vapid_subject: str = Field(default="mailto:admin@example.com")
+
 
 @lru_cache
 def get_settings() -> Settings:

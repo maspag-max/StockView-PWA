@@ -9,7 +9,7 @@ from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import alerts, auth_router, exchange_rate, narrative, search, stocks, watchlist, thesis
+from app.api import alerts, auth_router, exchange_rate, narrative, push_router, search, stocks, watchlist, thesis
 from app.config import get_settings
 from app.services.alert_checker import check_all_alerts
 
@@ -67,3 +67,4 @@ app.include_router(watchlist.router, prefix="/api/watchlist", tags=["watchlist"]
 app.include_router(thesis.router, prefix="/api/thesis", tags=["thesis"])
 app.include_router(exchange_rate.router, prefix="/api", tags=["exchange-rate"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
+app.include_router(push_router.router, prefix="/api/push", tags=["push"])

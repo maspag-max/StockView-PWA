@@ -48,4 +48,8 @@ export const api = {
   updateAlert: (id, data) =>
     request(`/alerts/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAlert: (id) => request(`/alerts/${id}`, { method: 'DELETE' }),
+  subscribePush: (subscription) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription }) }),
+  unsubscribePush: (endpoint) =>
+    request('/push/unsubscribe', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
 };

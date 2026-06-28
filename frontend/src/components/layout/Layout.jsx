@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import NavBar from './NavBar';
 import ThemeToggle from './ThemeToggle';
 import Watchlist from '../Watchlist';
+import PushNotificationToggle from '../PushNotificationToggle';
 import { api } from '../../lib/api';
 
 // ---------------------------------------------------------------------------
@@ -125,8 +126,11 @@ function SidebarContent({ onNav }) {
 
       {/* Footer */}
       <div className="shrink-0 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <span className="text-xs text-slate-400 dark:text-slate-600">v2.1</span>
-        <ThemeToggle />
+        <PushNotificationToggle />
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400 dark:text-slate-600">v2.1</span>
+          <ThemeToggle />
+        </div>
       </div>
     </>
   );

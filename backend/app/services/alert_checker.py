@@ -1,4 +1,4 @@
-"""Nightly job: checks all active alerts and fires emails."""
+"""Nightly job: checks all active alerts and fires emails + push notifications."""
 from __future__ import annotations
 
 import logging
@@ -9,6 +9,7 @@ import yfinance as yf
 
 from app.db import get_supabase
 from app.services.email_service import send_alert_email
+from app.services.push_service import send_push_notification
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ async def check_all_alerts() -> None:
 
     result = (
         db.table("alerts")
-        .select("id, symbol, kind, config, last_triggered")
+        .select("id, user_id, symbol, kind, config, last_triggered")
         .eq("active", True)
         .in_("kind", list(_ALL_KINDS))
         .execute()
@@ -38,23 +39,50 @@ async def check_all_alerts() -> None:
         kind: str = alert["kind"]
         config: dict = alert["config"]
         email: str = config.get("email", "")
+        user_id: str | None = alert.get("user_id")
         last_triggered_raw: str | None = alert.get("last_triggered")
 
         try:
             if kind in _CONSECUTIVE_KINDS:
                 days = int(config.get("days", 3))
                 _process_consecutive_alert(
-                    db, alert["id"], symbol, kind, days, email, today, last_triggered_raw
+                    db, alert["id"], user_id, symbol, kind, days, email, today, last_triggered_raw
                 )
             elif kind == "price_change_pct":
                 threshold_pct = float(config.get("threshold_pct", 5.0))
                 ref_price = float(config.get("ref_price", 0.0))
                 direction = config.get("direction", "down")
                 _process_pct_alert(
-                    db, alert["id"], symbol, threshold_pct, ref_price, direction, email, today, last_triggered_raw
+                    db, alert["id"], user_id, symbol, threshold_pct, ref_price,
+                    direction, email, today, last_triggered_raw,
                 )
         except Exception:
             logger.exception("Error processing alert id=%s symbol=%s", alert["id"], symbol)
+
+
+# ---------------------------------------------------------------------------
+# Push helper
+# ---------------------------------------------------------------------------
+
+def _send_push_for_user(db, user_id: str | None, title: str, body: str) -> None:
+    """Send push notifications to all subscriptions of a user; prune expired ones."""
+    if not user_id:
+        return
+
+    rows = (
+        db.table("push_subscriptions")
+        .select("id, subscription")
+        .eq("user_id", user_id)
+        .execute()
+        .data
+    ) or []
+
+    for row in rows:
+        sub = row["subscription"]
+        delivered = send_push_notification(sub, title, body, url="/alerts")
+        if not delivered:
+            db.table("push_subscriptions").delete().eq("id", row["id"]).execute()
+            logger.info("Removed expired push subscription id=%s", row["id"])
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +129,7 @@ def _mark_triggered(db, alert_id: int) -> None:
 def _process_consecutive_alert(
     db,
     alert_id: int,
+    user_id: str | None,
     symbol: str,
     kind: str,
     days: int,
@@ -132,9 +161,14 @@ def _process_consecutive_alert(
         logger.debug("%s: condition not met (kind=%s, days=%d)", symbol, kind, days)
         return
 
+    direction_word = "rialzo" if kind == "consecutive_up_days" else "calo"
+    push_title = f"Alert StockView: {symbol}"
+    push_body = f"{symbol} in {direction_word} per {days} giorni consecutivi."
+
     logger.info("%s: condition met (kind=%s, %d days) — sending alert", symbol, kind, days)
     send_alert_email(symbol, kind, days, email, tail)
     _mark_triggered(db, alert_id)
+    _send_push_for_user(db, user_id, push_title, push_body)
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +178,7 @@ def _process_consecutive_alert(
 def _process_pct_alert(
     db,
     alert_id: int,
+    user_id: str | None,
     symbol: str,
     threshold_pct: float,
     ref_price: float,
@@ -181,6 +216,13 @@ def _process_pct_alert(
         )
         return
 
+    sign = "+" if direction == "up" else "-"
+    push_title = f"Alert StockView: {symbol}"
+    push_body = (
+        f"{symbol} {sign}{abs(change_pct):.1f}% rispetto al prezzo di riferimento "
+        f"({ref_price:.2f} → {current_price:.2f})."
+    )
+
     logger.info(
         "%s: change %.2f%% meets threshold (direction=%s, ±%.2f%%) — sending alert",
         symbol, change_pct, direction, threshold_pct,
@@ -200,3 +242,4 @@ def _process_pct_alert(
         },
     )
     _mark_triggered(db, alert_id)
+    _send_push_for_user(db, user_id, push_title, push_body)

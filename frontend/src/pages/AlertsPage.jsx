@@ -410,13 +410,13 @@ export default function AlertsPage() {
       <main className="max-w-2xl mx-auto px-4 py-10 flex flex-col gap-6">
 
         <div className="flex items-baseline gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Alert email</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Alert<span className="hidden md:inline"> email</span></h1>
           <span className="text-sm text-slate-400 dark:text-slate-500">
             {alerts.length}/{MAX_ALERTS}
           </span>
         </div>
 
-        <p className="text-sm text-slate-500 dark:text-slate-400 -mt-3">
+        <p className="hidden md:block text-sm text-slate-500 dark:text-slate-400 -mt-3">
           Ricevi una email quando un titolo sale/scende per N giorni consecutivi,
           oppure quando varia di una certa percentuale rispetto al prezzo di riferimento.
           Il controllo avviene ogni sera alle 18:30 (ora italiana).

@@ -45,7 +45,7 @@ export default function PushNotificationToggle() {
       <button
         disabled
         title="Notifiche push non supportate in questo browser"
-        className="flex items-center gap-1.5 text-xs text-slate-300 dark:text-slate-600 cursor-not-allowed"
+        className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-400 cursor-not-allowed"
       >
         <BellIcon filled={false} />
         <span>Notifiche</span>
@@ -59,10 +59,10 @@ export default function PushNotificationToggle() {
         onClick={handleToggle}
         disabled={isLoading}
         title={isSubscribed ? 'Disattiva notifiche push' : 'Attiva notifiche push'}
-        className={`flex items-center gap-1.5 text-xs transition-colors disabled:opacity-50 ${
+        className={`flex items-center gap-1.5 text-xs transition-colors disabled:opacity-70 ${
           isSubscribed
             ? 'text-sky-500 dark:text-sky-400 hover:text-rose-500 dark:hover:text-rose-400'
-            : 'text-slate-400 dark:text-slate-500 hover:text-sky-500 dark:hover:text-sky-400'
+            : 'text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400'
         }`}
       >
         {isLoading ? <Spinner /> : <BellIcon filled={isSubscribed} />}

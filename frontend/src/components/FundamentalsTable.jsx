@@ -29,7 +29,7 @@ function format(value, fmt) {
 
 const SECTIONS = [
   {
-    label: 'Valutazione', borderClass: 'border-blue-500 dark:border-blue-400',
+    label: 'Valutazione', borderClass: 'border-blue-500 dark:border-blue-400', titleClass: 'text-blue-500 dark:text-blue-400',
     rows: [
       { key: 'pe_trailing',    label: 'P/E trailing',  fmt: 'ratio' },
       { key: 'pe_forward',     label: 'P/E forward',   fmt: 'ratio' },
@@ -40,7 +40,7 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Redditività', borderClass: 'border-emerald-500 dark:border-emerald-400',
+    label: 'Redditività', borderClass: 'border-emerald-500 dark:border-emerald-400', titleClass: 'text-emerald-500 dark:text-emerald-400',
     rows: [
       { key: 'roe',              label: 'ROE',              fmt: 'pct' },
       { key: 'roa',              label: 'ROA',              fmt: 'pct' },
@@ -51,14 +51,14 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Crescita', borderClass: 'border-orange-500 dark:border-orange-400',
+    label: 'Crescita', borderClass: 'border-orange-500 dark:border-orange-400', titleClass: 'text-orange-500 dark:text-orange-400',
     rows: [
       { key: 'revenue_growth',  label: 'Revenue growth YoY',  fmt: 'pct' },
       { key: 'earnings_growth', label: 'Earnings growth YoY', fmt: 'pct' },
     ],
   },
   {
-    label: 'Bilancio', borderClass: 'border-amber-500 dark:border-amber-400',
+    label: 'Bilancio', borderClass: 'border-amber-500 dark:border-amber-400', titleClass: 'text-amber-500 dark:text-amber-400',
     rows: [
       { key: 'debt_to_equity', label: 'Debt/Equity',   fmt: 'ratio' },
       { key: 'current_ratio',  label: 'Current ratio', fmt: 'ratio' },
@@ -66,14 +66,14 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Dividendo', borderClass: 'border-violet-500 dark:border-violet-400',
+    label: 'Dividendo', borderClass: 'border-violet-500 dark:border-violet-400', titleClass: 'text-violet-500 dark:text-violet-400',
     rows: [
       { key: 'dividend_yield', label: 'Dividend yield', fmt: 'pct_direct' },
       { key: 'payout_ratio',   label: 'Payout ratio',  fmt: 'pct' },
     ],
   },
   {
-    label: 'Mercato', borderClass: 'border-cyan-500 dark:border-cyan-400',
+    label: 'Mercato', borderClass: 'border-cyan-500 dark:border-cyan-400', titleClass: 'text-cyan-500 dark:text-cyan-400',
     rows: [
       { key: 'market_cap',          label: 'Market cap',      fmt: 'large_usd' },
       { key: 'beta',                label: 'Beta',            fmt: 'ratio' },
@@ -83,7 +83,7 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Cash flow & EPS', borderClass: 'border-rose-500 dark:border-rose-400',
+    label: 'Cash flow & EPS', borderClass: 'border-rose-500 dark:border-rose-400', titleClass: 'text-rose-500 dark:text-rose-400',
     rows: [
       { key: 'total_revenue', label: 'Revenue TTM',    fmt: 'large_usd' },
       { key: 'free_cashflow', label: 'Free cash flow', fmt: 'large_usd' },
@@ -95,8 +95,8 @@ const SECTIONS = [
 
 function SectionCard({ section, fund }) {
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-xl shadow p-6 border-2 ${section.borderClass}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-3">
+    <div className={`bg-slate-50 dark:bg-slate-800 rounded-xl shadow p-6 border-2 ${section.borderClass}`}>
+      <p className={`text-sm font-bold uppercase tracking-wide mb-3 ${section.titleClass}`}>
         {section.label}
       </p>
       <dl className="space-y-0.5">

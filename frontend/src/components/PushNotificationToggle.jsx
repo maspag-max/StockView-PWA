@@ -21,19 +21,45 @@ function Spinner() {
   );
 }
 
+function DebugBox({ isSupported, permission, isSubscribed }) {
+  const hasWindow = typeof window !== 'undefined';
+  const rows = [
+    ['"Notification" in window', String(hasWindow && 'Notification' in window)],
+    ['"serviceWorker" in navigator', String('serviceWorker' in navigator)],
+    ['"PushManager" in window', String(hasWindow && 'PushManager' in window)],
+    ['Notification.permission (raw)', hasWindow && 'Notification' in window ? Notification.permission : 'undefined'],
+    ['isSupported (React)', String(isSupported)],
+    ['permission (React)', String(permission)],
+    ['isSubscribed (React)', String(isSubscribed)],
+  ];
+  return (
+    <div className="mt-2 p-1.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+      {rows.map(([key, val]) => (
+        <div key={key} className="font-mono text-[9px] leading-tight text-slate-500 dark:text-slate-400 flex gap-1">
+          <span className="shrink-0">{key}:</span>
+          <span className="text-amber-600 dark:text-amber-400 break-all">{val}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PushNotificationToggle() {
   const { isSupported, isSubscribed, isLoading, permission, subscribe, unsubscribe } = usePushNotifications();
 
   if (!isSupported) {
     return (
-      <button
-        disabled
-        title="Notifiche push non supportate in questo browser"
-        className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-400 cursor-not-allowed"
-      >
-        <BellIcon filled={false} />
-        <span>Notifiche</span>
-      </button>
+      <div>
+        <button
+          disabled
+          title="Notifiche push non supportate in questo browser"
+          className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-400 cursor-not-allowed"
+        >
+          <BellIcon filled={false} />
+          <span>Notifiche</span>
+        </button>
+        <DebugBox isSupported={isSupported} permission={permission} isSubscribed={isSubscribed} />
+      </div>
     );
   }
 
@@ -52,6 +78,7 @@ export default function PushNotificationToggle() {
         <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
           Riattiva nelle impostazioni del browser
         </p>
+        <DebugBox isSupported={isSupported} permission={permission} isSubscribed={isSubscribed} />
       </div>
     );
   }
@@ -59,28 +86,34 @@ export default function PushNotificationToggle() {
   // Granted and subscribed
   if (permission === 'granted' && isSubscribed) {
     return (
-      <button
-        onClick={unsubscribe}
-        disabled={isLoading}
-        title="Disattiva notifiche push"
-        className="flex items-center gap-1.5 text-xs text-sky-500 dark:text-sky-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-70"
-      >
-        {isLoading ? <Spinner /> : <BellIcon filled={true} />}
-        <span>Notifiche attive</span>
-      </button>
+      <div>
+        <button
+          onClick={unsubscribe}
+          disabled={isLoading}
+          title="Disattiva notifiche push"
+          className="flex items-center gap-1.5 text-xs text-sky-500 dark:text-sky-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-70"
+        >
+          {isLoading ? <Spinner /> : <BellIcon filled={true} />}
+          <span>Notifiche attive</span>
+        </button>
+        <DebugBox isSupported={isSupported} permission={permission} isSubscribed={isSubscribed} />
+      </div>
     );
   }
 
   // Default (never asked) or granted but not yet subscribed — clicking triggers the browser dialog
   return (
-    <button
-      onClick={subscribe}
-      disabled={isLoading}
-      title="Attiva notifiche push"
-      className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors disabled:opacity-70"
-    >
-      {isLoading ? <Spinner /> : <BellIcon filled={false} />}
-      <span>Notifiche</span>
-    </button>
+    <div>
+      <button
+        onClick={subscribe}
+        disabled={isLoading}
+        title="Attiva notifiche push"
+        className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors disabled:opacity-70"
+      >
+        {isLoading ? <Spinner /> : <BellIcon filled={false} />}
+        <span>Notifiche</span>
+      </button>
+      <DebugBox isSupported={isSupported} permission={permission} isSubscribed={isSubscribed} />
+    </div>
   );
 }

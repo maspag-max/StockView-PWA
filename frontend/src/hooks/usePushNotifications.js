@@ -26,6 +26,14 @@ export function usePushNotifications() {
       'PushManager' in window &&
       'Notification' in window;
 
+    console.log('[PushNotifications] init', {
+      'Notification in window': typeof window !== 'undefined' && 'Notification' in window,
+      'serviceWorker in navigator': 'serviceWorker' in navigator,
+      'PushManager in window': 'PushManager' in window,
+      'Notification.permission (raw)': typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : undefined,
+      supported,
+    });
+
     setIsSupported(supported);
 
     if (!supported) {

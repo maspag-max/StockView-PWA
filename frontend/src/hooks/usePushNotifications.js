@@ -50,26 +50,42 @@ export function usePushNotifications() {
   }, []);
 
   async function subscribe() {
-    setIsLoading(true);
+    console.log('[subscribe] start — requestPermission is first call');
     try {
-      await Notification.requestPermission();
-      // Read Notification.permission directly after the call — on some mobile browsers
-      // (iOS Safari PWA, some Android WebViews) requestPermission() return value and
-      // Notification.permission can diverge (e.g. returns 'denied' when browser still
-      // shows 'default' because the user dismissed without choosing).
+      // requestPermission MUST be the very first await — no setState or other
+      // calls before it, or Chrome Android will silently drop it (transient
+      // user activation expires before the call reaches the browser).
+      const permResult = await Notification.requestPermission();
       const actualPerm = Notification.permission;
-      setPermission(actualPerm);
-      if (actualPerm !== 'granted') return;
+      console.log('[subscribe] requestPermission resolved', { permResult, actualPerm });
 
+      setPermission(actualPerm);
+      if (actualPerm !== 'granted') {
+        console.log('[subscribe] permission not granted, stopping');
+        return;
+      }
+
+      // Permission granted — now safe to show loading and continue
+      setIsLoading(true);
+
+      console.log('[subscribe] fetching VAPID public key...');
       const { publicKey } = await fetch('/api/push/vapid-public-key').then((r) => r.json());
+      console.log('[subscribe] VAPID key received, waiting for SW ready...');
+
       const reg = await navigator.serviceWorker.ready;
+      console.log('[subscribe] SW ready, calling pushManager.subscribe...');
+
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+      console.log('[subscribe] pushManager subscribed, sending to backend...');
 
       await api.subscribePush(sub.toJSON());
+      console.log('[subscribe] backend confirmed — done');
       setIsSubscribed(true);
+    } catch (err) {
+      console.error('[subscribe] error', err);
     } finally {
       setIsLoading(false);
     }

@@ -26,15 +26,6 @@ export function usePushNotifications() {
       'PushManager' in window &&
       'Notification' in window;
 
-    const notifPerm = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : undefined;
-    console.log('[PushNotifications] init', {
-      'Notification in window': typeof window !== 'undefined' && 'Notification' in window,
-      'serviceWorker in navigator': 'serviceWorker' in navigator,
-      'PushManager in window': 'PushManager' in window,
-      'Notification.permission (raw)': notifPerm,
-      supported,
-    });
-
     setIsSupported(supported);
 
     if (!supported) {
@@ -49,49 +40,31 @@ export function usePushNotifications() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  async function subscribe(addLog = () => {}) {
-    const log = (msg, data) => {
-      console.log(`[subscribe] ${msg}`, data ?? '');
-      addLog(msg, data);
-    };
-
-    log('start — requestPermission is first call');
+  async function subscribe() {
     try {
       // requestPermission MUST be the very first await — no setState or other
       // calls before it, or Chrome Android will silently drop it (transient
       // user activation expires before the call reaches the browser).
-      const permResult = await Notification.requestPermission();
+      await Notification.requestPermission();
+      // Read Notification.permission directly — on some mobile browsers the
+      // return value of requestPermission() and Notification.permission diverge.
       const actualPerm = Notification.permission;
-      log('requestPermission resolved', { permResult, actualPerm });
-
       setPermission(actualPerm);
-      if (actualPerm !== 'granted') {
-        log('permission not granted, stopping');
-        return;
-      }
+      if (actualPerm !== 'granted') return;
 
-      // Permission granted — now safe to show loading and continue
       setIsLoading(true);
 
-      log('fetching VAPID public key...');
       const { publicKey } = await fetch('/api/push/vapid-public-key').then((r) => r.json());
-      log('VAPID key received, waiting for SW ready...');
-
       const reg = await navigator.serviceWorker.ready;
-      log('SW ready, calling pushManager.subscribe...');
-
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-      log('pushManager subscribed, sending to backend...');
 
       await api.subscribePush(sub.toJSON());
-      log('backend confirmed — done');
       setIsSubscribed(true);
     } catch (err) {
-      log('ERROR', { message: err.message, name: err.name });
-      console.error('[subscribe] error', err);
+      console.error('[PushNotifications] subscribe error', err);
     } finally {
       setIsLoading(false);
     }

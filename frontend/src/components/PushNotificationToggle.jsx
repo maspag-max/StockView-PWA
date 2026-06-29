@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
 function BellIcon({ filled = false, className = 'w-3.5 h-3.5' }) {
@@ -23,23 +22,8 @@ function Spinner() {
 }
 
 export default function PushNotificationToggle() {
-  const { isSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
-  const [error, setError] = useState('');
+  const { isSupported, isSubscribed, isLoading, permission, subscribe, unsubscribe } = usePushNotifications();
 
-  async function handleToggle() {
-    setError('');
-    try {
-      if (isSubscribed) {
-        await unsubscribe();
-      } else {
-        await subscribe();
-      }
-    } catch (err) {
-      setError(err.message || 'Errore notifiche.');
-    }
-  }
-
-  // Not supported: show disabled bell — always visible so the sidebar layout is stable
   if (!isSupported) {
     return (
       <button
@@ -53,22 +37,50 @@ export default function PushNotificationToggle() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-1">
+  // User explicitly blocked notifications — browser won't show dialog again
+  if (permission === 'denied') {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <button
+          disabled
+          title="Riattiva le notifiche dalle impostazioni del browser"
+          className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 cursor-not-allowed"
+        >
+          <BellIcon filled={false} />
+          <span>Permesso negato</span>
+        </button>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+          Riattiva nelle impostazioni del browser
+        </p>
+      </div>
+    );
+  }
+
+  // Granted and subscribed
+  if (permission === 'granted' && isSubscribed) {
+    return (
       <button
-        onClick={handleToggle}
+        onClick={unsubscribe}
         disabled={isLoading}
-        title={isSubscribed ? 'Disattiva notifiche push' : 'Attiva notifiche push'}
-        className={`flex items-center gap-1.5 text-xs transition-colors disabled:opacity-70 ${
-          isSubscribed
-            ? 'text-sky-500 dark:text-sky-400 hover:text-rose-500 dark:hover:text-rose-400'
-            : 'text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400'
-        }`}
+        title="Disattiva notifiche push"
+        className="flex items-center gap-1.5 text-xs text-sky-500 dark:text-sky-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-70"
       >
-        {isLoading ? <Spinner /> : <BellIcon filled={isSubscribed} />}
-        <span>{isSubscribed ? 'Notifiche attive' : 'Notifiche'}</span>
+        {isLoading ? <Spinner /> : <BellIcon filled={true} />}
+        <span>Notifiche attive</span>
       </button>
-      {error && <p className="text-[10px] text-rose-400">{error}</p>}
-    </div>
+    );
+  }
+
+  // Default (never asked) or granted but not yet subscribed — clicking triggers the browser dialog
+  return (
+    <button
+      onClick={subscribe}
+      disabled={isLoading}
+      title="Attiva notifiche push"
+      className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors disabled:opacity-70"
+    >
+      {isLoading ? <Spinner /> : <BellIcon filled={false} />}
+      <span>Notifiche</span>
+    </button>
   );
 }

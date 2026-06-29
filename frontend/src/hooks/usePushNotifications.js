@@ -16,6 +16,9 @@ export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [permission, setPermission] = useState(
+    'Notification' in window ? Notification.permission : 'default'
+  );
 
   useEffect(() => {
     const supported =
@@ -40,8 +43,10 @@ export function usePushNotifications() {
   async function subscribe() {
     setIsLoading(true);
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') throw new Error('Permesso notifiche negato.');
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      // If user denied or dismissed, update state and stop — not an error
+      if (perm !== 'granted') return;
 
       const { publicKey } = await fetch('/api/push/vapid-public-key').then((r) => r.json());
       const reg = await navigator.serviceWorker.ready;
@@ -72,5 +77,5 @@ export function usePushNotifications() {
     }
   }
 
-  return { isSupported, isSubscribed, isLoading, subscribe, unsubscribe };
+  return { isSupported, isSubscribed, isLoading, permission, subscribe, unsubscribe };
 }

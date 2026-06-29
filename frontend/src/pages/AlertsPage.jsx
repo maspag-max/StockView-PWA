@@ -382,8 +382,9 @@ const BULK_ALERT_DEFS = [
 ];
 
 function BulkAlertForm({ onSubmit, isPending, currentCount }) {
-  const [symbol, setSymbol] = useState('');
-  const [email, setEmail]   = useState('');
+  const [symbol, setSymbol]           = useState('');
+  const [selectedName, setSelectedName] = useState('');
+  const [email, setEmail]             = useState('');
   const [checks, setChecks] = useState({ down_days: false, up_days: false, down_pct: false, up_pct: false });
   const [params, setParams] = useState({ down_days: 3, up_days: 3, down_pct: 5, up_pct: 5 });
   const [error,   setError]   = useState('');
@@ -419,6 +420,7 @@ function BulkAlertForm({ onSubmit, isPending, currentCount }) {
       }
       setSuccess(`${toCreate.length} alert creati per ${symbol.trim().toUpperCase()}.`);
       setSymbol('');
+      setSelectedName('');
       setEmail('');
       setChecks({ down_days: false, up_days: false, down_pct: false, up_pct: false });
       setParams({ down_days: 3, up_days: 3, down_pct: 5, up_pct: 5 });
@@ -439,18 +441,12 @@ function BulkAlertForm({ onSubmit, isPending, currentCount }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-slate-500 dark:text-slate-400">Ticker</label>
-          <input
-            type="text"
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-            placeholder="es. AAPL"
-            className="px-3 py-2 rounded-lg text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200
-                       dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <TickerField
+          symbol={symbol}
+          selectedName={selectedName}
+          onChange={(val) => { setSymbol(val); setSelectedName(''); }}
+          onSelect={(sym, name) => { setSymbol(sym); setSelectedName(name); }}
+        />
         <div className="flex flex-col gap-1">
           <label className="text-xs text-slate-500 dark:text-slate-400">Email destinatario</label>
           <input

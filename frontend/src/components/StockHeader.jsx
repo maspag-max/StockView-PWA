@@ -82,11 +82,14 @@ function WatchlistButton({ inWatchlist, isPending, onClick }) {
       type="button"
       onClick={onClick}
       disabled={isPending}
-      title={inWatchlist ? 'Rimuovi dalla watchlist' : 'Aggiungi alla watchlist'}
-      className="text-base leading-none transition-colors disabled:opacity-40
-                 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400"
+      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  ${inWatchlist
+                    ? 'bg-sky-600 text-white hover:bg-sky-700'
+                    : 'border border-sky-600 text-sky-600 bg-transparent hover:bg-sky-50 dark:border-sky-400 dark:text-sky-400 dark:hover:bg-sky-950'
+                  }`}
     >
-      {inWatchlist ? '★' : '☆'}
+      {inWatchlist ? '✓ In watchlist' : '+ Watchlist'}
     </button>
   );
 }

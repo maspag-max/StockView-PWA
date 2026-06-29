@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Grid, Text } from '@tremor/react';
+import { Grid, Text } from '@tremor/react';
 import { api } from '../lib/api';
 
 const it = (v, minD, maxD) =>
@@ -29,7 +29,7 @@ function format(value, fmt) {
 
 const SECTIONS = [
   {
-    label: 'Valutazione', color: 'blue',
+    label: 'Valutazione', borderClass: 'border-blue-500 dark:border-blue-400',
     rows: [
       { key: 'pe_trailing',    label: 'P/E trailing',  fmt: 'ratio' },
       { key: 'pe_forward',     label: 'P/E forward',   fmt: 'ratio' },
@@ -40,7 +40,7 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Redditività', color: 'emerald',
+    label: 'Redditività', borderClass: 'border-emerald-500 dark:border-emerald-400',
     rows: [
       { key: 'roe',              label: 'ROE',              fmt: 'pct' },
       { key: 'roa',              label: 'ROA',              fmt: 'pct' },
@@ -51,14 +51,14 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Crescita', color: 'teal',
+    label: 'Crescita', borderClass: 'border-orange-500 dark:border-orange-400',
     rows: [
       { key: 'revenue_growth',  label: 'Revenue growth YoY',  fmt: 'pct' },
       { key: 'earnings_growth', label: 'Earnings growth YoY', fmt: 'pct' },
     ],
   },
   {
-    label: 'Bilancio', color: 'amber',
+    label: 'Bilancio', borderClass: 'border-amber-500 dark:border-amber-400',
     rows: [
       { key: 'debt_to_equity', label: 'Debt/Equity',   fmt: 'ratio' },
       { key: 'current_ratio',  label: 'Current ratio', fmt: 'ratio' },
@@ -66,14 +66,14 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Dividendo', color: 'violet',
+    label: 'Dividendo', borderClass: 'border-violet-500 dark:border-violet-400',
     rows: [
       { key: 'dividend_yield', label: 'Dividend yield', fmt: 'pct_direct' },
       { key: 'payout_ratio',   label: 'Payout ratio',  fmt: 'pct' },
     ],
   },
   {
-    label: 'Mercato', color: 'sky',
+    label: 'Mercato', borderClass: 'border-cyan-500 dark:border-cyan-400',
     rows: [
       { key: 'market_cap',          label: 'Market cap',      fmt: 'large_usd' },
       { key: 'beta',                label: 'Beta',            fmt: 'ratio' },
@@ -83,7 +83,7 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Cash flow & EPS', color: 'indigo',
+    label: 'Cash flow & EPS', borderClass: 'border-rose-500 dark:border-rose-400',
     rows: [
       { key: 'total_revenue', label: 'Revenue TTM',    fmt: 'large_usd' },
       { key: 'free_cashflow', label: 'Free cash flow', fmt: 'large_usd' },
@@ -95,7 +95,7 @@ const SECTIONS = [
 
 function SectionCard({ section, fund }) {
   return (
-    <Card decoration="top" decorationColor={section.color}>
+    <div className={`bg-white dark:bg-slate-900 rounded-xl shadow p-6 border-2 ${section.borderClass}`}>
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-3">
         {section.label}
       </p>
@@ -111,7 +111,7 @@ function SectionCard({ section, fund }) {
           </div>
         ))}
       </dl>
-    </Card>
+    </div>
   );
 }
 

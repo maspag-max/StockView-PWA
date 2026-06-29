@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import NavBar from './NavBar';
 import ThemeToggle from './ThemeToggle';
@@ -38,6 +39,7 @@ function SidebarContent({ onNav }) {
 
   const navItems = [
     { to: '/', icon: <HomeIcon className="w-4 h-4 shrink-0" />, label: 'Home' },
+    { to: '/alerts', icon: <Bell className="w-4 h-4 shrink-0" />, label: 'Alert' },
   ];
 
   async function handleSignOut() {
@@ -129,6 +131,7 @@ export default function Layout({ children }) {
 
   const bottomNavItems = [
     { to: '/', label: 'Home', icon: HomeIcon },
+    { to: '/alerts', label: 'Alert', icon: Bell },
   ];
 
   function closeDrawer() {

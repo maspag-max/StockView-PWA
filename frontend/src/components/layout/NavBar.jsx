@@ -1,12 +1,4 @@
-/**
- * TopBar — visibile in StockPage e AlertsPage, non in Home.
- *
- * StockPage: breadcrumb ticker · nome + chip tabs + ThemeToggle + avatar
- * AlertsPage: breadcrumb semplificato + ThemeToggle + avatar
- *
- * Il componente si auto-configura tramite useParams / useLocation.
- */
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import ThemeToggle from './ThemeToggle';
 import { api } from '../../lib/api';
@@ -112,37 +104,11 @@ function StockTopBar({ ticker }) {
 }
 
 // ---------------------------------------------------------------------------
-// Variante AlertsPage
-// ---------------------------------------------------------------------------
-
-function AlertsTopBar() {
-  return (
-    <TopBarShell
-      left={
-        <Breadcrumb>
-          <span className="text-slate-800 dark:text-slate-200 font-medium">Alert</span>
-        </Breadcrumb>
-      }
-      center={null}
-      right={
-        <>
-          <ThemeToggle />
-          <Avatar />
-        </>
-      }
-    />
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Export — si auto-configura in base alla route corrente
 // ---------------------------------------------------------------------------
 
 export default function NavBar() {
   const { ticker } = useParams();
-  const location = useLocation();
-
   if (ticker) return <StockTopBar ticker={ticker} />;
-  if (location.pathname === '/alerts') return <AlertsTopBar />;
   return null;
 }

@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import NavBar from './NavBar';
 import ThemeToggle from './ThemeToggle';
 import Watchlist from '../Watchlist';
 import PushNotificationToggle from '../PushNotificationToggle';
-import { api } from '../../lib/api';
 
 // ---------------------------------------------------------------------------
 // Icons
@@ -20,13 +18,6 @@ function HomeIcon({ className = 'w-5 h-5' }) {
   );
 }
 
-function BellIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M10 2a6 6 0 0 0-6 6v2.586l-.707.707A1 1 0 0 0 4 13h12a1 1 0 0 0 .707-1.707L16 10.586V8a6 6 0 0 0-6-6ZM10 18a3 3 0 0 1-2.83-2h5.66A3 3 0 0 1 10 18Z" clipRule="evenodd" />
-    </svg>
-  );
-}
 
 function MenuIcon() {
   return (
@@ -45,16 +36,8 @@ function SidebarContent({ onNav }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
-  const { data: alerts = [] } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: api.getAlerts,
-    staleTime: 60_000,
-  });
-  const activeAlertCount = alerts.filter((a) => a.active).length;
-
   const navItems = [
     { to: '/', icon: <HomeIcon className="w-4 h-4 shrink-0" />, label: 'Home' },
-    { to: '/alerts', icon: <BellIcon className="w-4 h-4 shrink-0" />, label: 'Alert', badge: activeAlertCount },
   ];
 
   async function handleSignOut() {
@@ -144,16 +127,8 @@ export default function Layout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
 
-  const { data: alerts = [] } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: api.getAlerts,
-    staleTime: 60_000,
-  });
-  const activeAlertCount = alerts.filter((a) => a.active).length;
-
   const bottomNavItems = [
     { to: '/', label: 'Home', icon: HomeIcon },
-    { to: '/alerts', label: 'Alert', icon: BellIcon, badge: activeAlertCount },
   ];
 
   function closeDrawer() {

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -12,7 +12,6 @@ import FundamentalsTable from './components/FundamentalsTable';
 import NewsFeed from './components/NewsFeed';
 import ThesisEditor from './components/ThesisEditor';
 import NarrativeSection from './components/NarrativeSection';
-import AlertsPage from './pages/AlertsPage';
 import LoginPage from './pages/LoginPage';
 
 // ---------------------------------------------------------------------------
@@ -113,7 +112,7 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
               <Route path="/stock/:ticker" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
-              <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
+              <Route path="/alerts" element={<Navigate to="/" replace />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

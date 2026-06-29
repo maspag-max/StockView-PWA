@@ -29,7 +29,7 @@ function format(value, fmt) {
 
 const SECTIONS = [
   {
-    label: 'Valutazione', borderClass: 'border-blue-500 dark:border-blue-400', titleClass: 'text-blue-500 dark:text-blue-400',
+    label: 'Valutazione', borderClass: 'border-indigo-600 dark:border-indigo-400', titleClass: 'text-indigo-600 dark:text-indigo-400',
     rows: [
       { key: 'pe_trailing',    label: 'P/E trailing',  fmt: 'ratio' },
       { key: 'pe_forward',     label: 'P/E forward',   fmt: 'ratio' },
@@ -51,7 +51,7 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Crescita', borderClass: 'border-orange-500 dark:border-orange-400', titleClass: 'text-orange-500 dark:text-orange-400',
+    label: 'Crescita', borderClass: 'border-red-500 dark:border-red-400', titleClass: 'text-red-500 dark:text-red-400',
     rows: [
       { key: 'revenue_growth',  label: 'Revenue growth YoY',  fmt: 'pct' },
       { key: 'earnings_growth', label: 'Earnings growth YoY', fmt: 'pct' },
@@ -66,14 +66,14 @@ const SECTIONS = [
     ],
   },
   {
-    label: 'Dividendo', borderClass: 'border-violet-500 dark:border-violet-400', titleClass: 'text-violet-500 dark:text-violet-400',
+    label: 'Dividendo', borderClass: 'border-purple-600 dark:border-purple-400', titleClass: 'text-purple-600 dark:text-purple-400',
     rows: [
       { key: 'dividend_yield', label: 'Dividend yield', fmt: 'pct_direct' },
       { key: 'payout_ratio',   label: 'Payout ratio',  fmt: 'pct' },
     ],
   },
   {
-    label: 'Mercato', borderClass: 'border-cyan-500 dark:border-cyan-400', titleClass: 'text-cyan-500 dark:text-cyan-400',
+    label: 'Mercato', borderClass: 'border-cyan-600 dark:border-cyan-400', titleClass: 'text-cyan-600 dark:text-cyan-400',
     rows: [
       { key: 'market_cap',          label: 'Market cap',      fmt: 'large_usd' },
       { key: 'beta',                label: 'Beta',            fmt: 'ratio' },
@@ -95,8 +95,8 @@ const SECTIONS = [
 
 function SectionCard({ section, fund }) {
   return (
-    <div className={`bg-slate-50 dark:bg-slate-800 rounded-xl shadow p-6 border-2 ${section.borderClass}`}>
-      <p className={`text-sm font-bold uppercase tracking-wide mb-3 ${section.titleClass}`}>
+    <div className={`bg-slate-50 dark:bg-slate-800 rounded-xl shadow p-6 border-[3px] ${section.borderClass}`}>
+      <p className={`text-lg font-extrabold uppercase tracking-wide mb-3 ${section.titleClass}`}>
         {section.label}
       </p>
       <dl className="space-y-0.5">

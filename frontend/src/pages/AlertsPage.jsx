@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout';
 import TickerAutocomplete from '../components/TickerAutocomplete';
 import { api } from '../lib/api';
 
-const MAX_ALERTS = 10;
+const MAX_ALERTS = 100;
 
 const KIND_META = {
   consecutive_down_days: {
@@ -371,6 +371,154 @@ function PctAlertForm({ defaultEmail, onSubmit, isPending, onClose }) {
 }
 
 // ---------------------------------------------------------------------------
+// Bulk alert form
+// ---------------------------------------------------------------------------
+
+const BULK_ALERT_DEFS = [
+  { key: 'down_days', label: 'Cali consecutivi',  paramLabel: 'giorni',   min: 2, max: 10 },
+  { key: 'up_days',   label: 'Rialzi consecutivi', paramLabel: 'giorni',   min: 2, max: 10 },
+  { key: 'down_pct',  label: 'Calo %',             paramLabel: 'soglia %', min: 1, max: 50 },
+  { key: 'up_pct',    label: 'Rialzo %',            paramLabel: 'soglia %', min: 1, max: 50 },
+];
+
+function BulkAlertForm({ onSubmit, isPending, currentCount }) {
+  const [symbol, setSymbol] = useState('');
+  const [email, setEmail]   = useState('');
+  const [checks, setChecks] = useState({ down_days: false, up_days: false, down_pct: false, up_pct: false });
+  const [params, setParams] = useState({ down_days: 3, up_days: 3, down_pct: 5, up_pct: 5 });
+  const [error,   setError]   = useState('');
+  const [success, setSuccess] = useState('');
+
+  const selectedCount = Object.values(checks).filter(Boolean).length;
+  const canSubmit = selectedCount > 0 && symbol.trim() && email.trim() && !isPending;
+
+  const handleCreate = async () => {
+    setError('');
+    setSuccess('');
+
+    const toCreate = BULK_ALERT_DEFS.filter((a) => checks[a.key]);
+    if (currentCount + toCreate.length > MAX_ALERTS) {
+      setError(
+        `Limite di ${MAX_ALERTS} alert raggiunto. Hai ${currentCount} alert e stai aggiungendone ${toCreate.length}.`
+      );
+      return;
+    }
+
+    try {
+      for (const def of toCreate) {
+        const sym = symbol.trim().toUpperCase();
+        if (def.key === 'down_days') {
+          await onSubmit({ symbol: sym, kind: 'consecutive_down_days', days: Number(params[def.key]), email });
+        } else if (def.key === 'up_days') {
+          await onSubmit({ symbol: sym, kind: 'consecutive_up_days',   days: Number(params[def.key]), email });
+        } else if (def.key === 'down_pct') {
+          await onSubmit({ symbol: sym, kind: 'price_change_pct', threshold_pct: Number(params[def.key]), direction: 'down', email });
+        } else {
+          await onSubmit({ symbol: sym, kind: 'price_change_pct', threshold_pct: Number(params[def.key]), direction: 'up',   email });
+        }
+      }
+      setSuccess(`${toCreate.length} alert creati per ${symbol.trim().toUpperCase()}.`);
+      setSymbol('');
+      setEmail('');
+      setChecks({ down_days: false, up_days: false, down_pct: false, up_pct: false });
+      setParams({ down_days: 3, up_days: 3, down_pct: 5, up_pct: 5 });
+    } catch (err) {
+      setError(extractErrorDetail(err));
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-4">
+      <div>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          Configura tutti gli alert in una volta
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          Imposta uno o più alert per lo stesso titolo in un click
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-500 dark:text-slate-400">Ticker</label>
+          <input
+            type="text"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+            placeholder="es. AAPL"
+            className="px-3 py-2 rounded-lg text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200
+                       dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-500 dark:text-slate-400">Email destinatario</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@esempio.com"
+            className="px-3 py-2 rounded-lg text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200
+                       dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        {BULK_ALERT_DEFS.map(({ key, label, paramLabel, min, max }) => (
+          <div key={key} className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id={`bulk-${key}`}
+              checked={checks[key]}
+              onChange={(e) => setChecks((c) => ({ ...c, [key]: e.target.checked }))}
+              className="w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
+            />
+            <label
+              htmlFor={`bulk-${key}`}
+              className="text-sm text-slate-700 dark:text-slate-300 w-40 cursor-pointer select-none"
+            >
+              {label}
+            </label>
+            <span className="text-xs text-slate-400 dark:text-slate-500 w-14">{paramLabel}</span>
+            <input
+              type="number"
+              min={min}
+              max={max}
+              value={params[key]}
+              disabled={!checks[key]}
+              onChange={(e) =>
+                setParams((p) => ({
+                  ...p,
+                  [key]: Math.min(max, Math.max(min, Number(e.target.value))),
+                }))
+              }
+              className="w-16 px-2 py-1 rounded-lg text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200
+                         dark:border-slate-700 text-slate-900 dark:text-slate-100
+                         disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        ))}
+      </div>
+
+      {error   && <p className="text-sm text-rose-500 dark:text-rose-400">{error}</p>}
+      {success && <p className="text-sm text-emerald-600 dark:text-emerald-400">{success}</p>}
+
+      <button
+        type="button"
+        onClick={handleCreate}
+        disabled={!canSubmit}
+        className="self-start px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white
+                   hover:bg-blue-700 disabled:opacity-40 transition-colors"
+      >
+        {isPending ? 'Creazione…' : 'Crea alert selezionati'}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -421,6 +569,13 @@ export default function AlertsPage() {
           oppure quando varia di una certa percentuale rispetto al prezzo di riferimento.
           Il controllo avviene ogni sera alle 18:30 (ora italiana).
         </p>
+
+        {/* Bulk creation */}
+        <BulkAlertForm
+          onSubmit={createMutation.mutateAsync}
+          isPending={createMutation.isPending}
+          currentCount={alerts.length}
+        />
 
         {/* Alert list */}
         {isLoading && (

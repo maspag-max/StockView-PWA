@@ -15,7 +15,7 @@ from app.services.meta import get_stock_meta
 
 router = APIRouter()
 
-_MAX_ALERTS = 10
+_MAX_ALERTS = 100
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _CONSECUTIVE_KINDS = {"consecutive_down_days", "consecutive_up_days"}
 _ALL_KINDS = _CONSECUTIVE_KINDS | {"price_change_pct"}

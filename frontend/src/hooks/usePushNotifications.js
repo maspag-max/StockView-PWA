@@ -26,11 +26,12 @@ export function usePushNotifications() {
       'PushManager' in window &&
       'Notification' in window;
 
+    const notifPerm = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : undefined;
     console.log('[PushNotifications] init', {
       'Notification in window': typeof window !== 'undefined' && 'Notification' in window,
       'serviceWorker in navigator': 'serviceWorker' in navigator,
       'PushManager in window': 'PushManager' in window,
-      'Notification.permission (raw)': typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : undefined,
+      'Notification.permission (raw)': notifPerm,
       supported,
     });
 
@@ -51,10 +52,14 @@ export function usePushNotifications() {
   async function subscribe() {
     setIsLoading(true);
     try {
-      const perm = await Notification.requestPermission();
-      setPermission(perm);
-      // If user denied or dismissed, update state and stop — not an error
-      if (perm !== 'granted') return;
+      await Notification.requestPermission();
+      // Read Notification.permission directly after the call — on some mobile browsers
+      // (iOS Safari PWA, some Android WebViews) requestPermission() return value and
+      // Notification.permission can diverge (e.g. returns 'denied' when browser still
+      // shows 'default' because the user dismissed without choosing).
+      const actualPerm = Notification.permission;
+      setPermission(actualPerm);
+      if (actualPerm !== 'granted') return;
 
       const { publicKey } = await fetch('/api/push/vapid-public-key').then((r) => r.json());
       const reg = await navigator.serviceWorker.ready;

@@ -122,6 +122,34 @@ function RangeCell({ low52, high52, price, fmtPrice }) {
   );
 }
 
+// Cell 5 — intraday range with mini progress bar
+function DayRangeCell({ dayLow, dayHigh, price, fmtPrice }) {
+  let pct = null;
+  if (dayLow != null && dayHigh != null && dayHigh > dayLow && price != null) {
+    pct = Math.min(100, Math.max(0, ((price - dayLow) / (dayHigh - dayLow)) * 100));
+  }
+
+  return (
+    <div className="flex flex-col justify-center gap-1.5 px-5 min-w-[140px]">
+      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+        Intervallo giornaliero
+      </span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{fmtPrice(dayLow)}</span>
+        <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden min-w-[48px]">
+          {pct != null && (
+            <div
+              className="h-full rounded-full bg-sky-500"
+              style={{ width: `${pct}%` }}
+            />
+          )}
+        </div>
+        <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{fmtPrice(dayHigh)}</span>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -247,7 +275,17 @@ export default function StockHeader({ ticker }) {
         />
       </div>
 
-      {/* Cell 5 — Market cap + volume */}
+      {/* Cell 5 — Intervallo giornaliero */}
+      <div className="border-r border-slate-200 dark:border-slate-800">
+        <DayRangeCell
+          dayLow={fund?.day_low}
+          dayHigh={fund?.day_high}
+          price={price}
+          fmtPrice={fmtPrice}
+        />
+      </div>
+
+      {/* Cell 6 — Market cap + volume */}
       <div className="flex flex-col justify-center px-5 gap-0.5 min-w-[120px]">
         <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
           Mercato

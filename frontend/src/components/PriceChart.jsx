@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { Card, AreaChart, TabGroup, TabList, Tab } from '@tremor/react';
 import { api } from '../lib/api';
 import CustomPeriodPanel from './CustomPeriodPanel';
 
-const RANGES = ['1m', '3m', '6m', '1y', '3y', '5y', 'max'];
-const PRELOAD_COUNT = 4; // 1m–1y preloaded at mount; 3y/5y/max only on click
-const DEFAULT_IDX = 4;  // '3y'
+const RANGES = ['1g', '1s', '1m', '3m', '6m', '1y', '3y'];
+const LABELS = ['1G', '1S', '1M', '3M', '6M', '1A', '3A'];
+const PRELOAD_COUNT = 4; // 1g, 1s, 1m, 3m preloaded at mount
+const DEFAULT_IDX = 0;  // '1g'
 
 function formatDate(dateStr, range) {
+  if (['1g', '1s'].includes(range)) {
+    return dateStr.slice(11, 16); // "HH:MM" from "YYYY-MM-DDTHH:MM:SS"
+  }
   const d = new Date(dateStr + 'T00:00:00');
   if (['1m', '3m'].includes(range))
     return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
@@ -18,6 +22,12 @@ function formatDate(dateStr, range) {
 }
 
 function formatFullDate(dateStr) {
+  if (dateStr.includes('T')) {
+    const d = new Date(dateStr);
+    return d.toLocaleString('it-IT', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+  }
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('it-IT', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
@@ -47,18 +57,23 @@ function PriceTooltip({ payload, active }) {
 }
 
 export default function PriceChart({ ticker }) {
-  const [rangeIdx,    setRangeIdx]    = useState(DEFAULT_IDX);
-  const [maxEnabled,  setMaxEnabled]  = useState(false);
+  const [rangeIdx,   setRangeIdx]   = useState(DEFAULT_IDX);
+  const [maxEnabled, setMaxEnabled] = useState(false);
 
-  // Single useQueries for all 7 ranges.
-  // 1m–1y: always enabled (preload). 3y/5y: on click. max: on click OR when
-  // CustomPeriodPanel requests it via onNeedMaxData.
+  // RANGES tabs: 1g, 1s, 1m, 3m, 6m, 1y, 3y — preload first 4.
   const rangeQueries = useQueries({
     queries: RANGES.map((r, i) => ({
       queryKey: ['prices', ticker, r],
       queryFn:  () => api.getPrices(ticker, r),
-      enabled:  i < PRELOAD_COUNT || rangeIdx === i || (i === 6 && maxEnabled),
+      enabled:  i < PRELOAD_COUNT || rangeIdx === i,
     })),
+  });
+
+  // Separate query for "max" — used only by CustomPeriodPanel, not shown as tab.
+  const maxQuery = useQuery({
+    queryKey: ['prices', ticker, 'max'],
+    queryFn:  () => api.getPrices(ticker, 'max'),
+    enabled:  maxEnabled,
   });
 
   const { data: prices, isLoading, isError } = rangeQueries[rangeIdx];
@@ -70,7 +85,7 @@ export default function PriceChart({ ticker }) {
   })) ?? [];
 
   const rangeStats = RANGES.map((r, i) => ({
-    label: r.toUpperCase(),
+    label: LABELS[i],
     pct:   calcPct(rangeQueries[i].data),
   }));
 
@@ -88,7 +103,7 @@ export default function PriceChart({ ticker }) {
                 const pct = calcPct(rangeQueries[i].data);
                 return (
                   <Tab key={r} className="text-xs !px-2 !py-0.5 flex flex-col items-center gap-0">
-                    <span className="leading-tight">{r.toUpperCase()}</span>
+                    <span className="leading-tight">{LABELS[i]}</span>
                     {pct != null ? (
                       <span className={`text-[10px] leading-tight font-normal tabular-nums ${
                         pct >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
@@ -137,8 +152,8 @@ export default function PriceChart({ ticker }) {
 
       <CustomPeriodPanel
         ticker={ticker}
-        maxPrices={rangeQueries[6].data}
-        maxLoading={rangeQueries[6].isLoading}
+        maxPrices={maxQuery.data}
+        maxLoading={maxQuery.isLoading}
         onNeedMaxData={() => setMaxEnabled(true)}
         rangeStats={rangeStats}
       />

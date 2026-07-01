@@ -41,14 +41,16 @@ function calcPct(prices) {
   return ((last - first) / first) * 100;
 }
 
-// For "1g" the meaningful base is yesterday's close (previousClose), not the
-// first intraday candle — so this aligns with the "Oggi" cell in StockHeader.
-function calcRangePct(prices, rangeKey, previousClose) {
+// For "1g" use the same base as StockHeader's deriveQuote: prices[n-2].close
+// from the daily "1m" series (yesterdayClose). This guarantees the two numbers
+// are identical by construction, since they read the same cached data source.
+function calcRangePct(prices, rangeKey, daily1mPrices) {
   if (!prices || prices.length < 2) return null;
   const last = prices[prices.length - 1].close;
   if (rangeKey === '1g') {
-    if (previousClose == null) return null;
-    return ((last - previousClose) / previousClose) * 100;
+    if (!daily1mPrices || daily1mPrices.length < 2) return null;
+    const yesterdayClose = daily1mPrices[daily1mPrices.length - 2].close;
+    return ((last - yesterdayClose) / yesterdayClose) * 100;
   }
   return ((last - prices[0].close) / prices[0].close) * 100;
 }
@@ -88,12 +90,9 @@ export default function PriceChart({ ticker }) {
     enabled:  maxEnabled,
   });
 
-  // Fundamentals — reuses the shared cache already populated by StockHeader.
-  const fundQuery = useQuery({
-    queryKey: ['fundamentals', ticker],
-    queryFn:  () => api.getFundamentals(ticker),
-  });
-  const previousClose = fundQuery.data?.previous_close ?? null;
+  // daily1mPrices is rangeQueries[2] ('1m', always enabled as 2 < PRELOAD_COUNT).
+  // Used as the base for the "1g" percentage — same source as StockHeader's deriveQuote.
+  const daily1mPrices = rangeQueries[2].data ?? null;
 
   const { data: prices, isLoading, isError } = rangeQueries[rangeIdx];
 
@@ -105,7 +104,7 @@ export default function PriceChart({ ticker }) {
 
   const rangeStats = RANGES.map((r, i) => ({
     label: LABELS[i],
-    pct:   calcRangePct(rangeQueries[i].data, r, previousClose),
+    pct:   calcRangePct(rangeQueries[i].data, r, daily1mPrices),
   }));
 
   return (
@@ -119,7 +118,7 @@ export default function PriceChart({ ticker }) {
           <TabGroup index={rangeIdx} onIndexChange={setRangeIdx}>
             <TabList variant="solid">
               {RANGES.map((r, i) => {
-                const pct = calcRangePct(rangeQueries[i].data, r, previousClose);
+                const pct = calcRangePct(rangeQueries[i].data, r, daily1mPrices);
                 return (
                   <Tab key={r} className="text-xs !px-2 !py-0.5 flex flex-col items-center gap-0">
                     <span className="leading-tight">{LABELS[i]}</span>

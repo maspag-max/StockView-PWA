@@ -13,7 +13,7 @@ from app.services.news import get_news
 
 router = APIRouter()
 
-_VALID_RANGES = {"1m", "3m", "6m", "1y", "3y", "5y", "max"}
+_VALID_RANGES = {"1g", "1s", "1m", "3m", "6m", "1y", "3y", "5y", "max"}
 
 
 @router.get("/{ticker}", response_model=StockMeta)

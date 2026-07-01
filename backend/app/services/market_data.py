@@ -19,6 +19,11 @@ _RANGE_TO_DAYS: dict[str, int | None] = {
     "max": None,
 }
 
+_INTRADAY_CONFIG: dict[str, dict[str, str]] = {
+    "1g": {"period": "1d", "interval": "5m"},
+    "1s": {"period": "5d", "interval": "15m"},
+}
+
 
 def _range_start(range_: str) -> date | None:
     days = _RANGE_TO_DAYS[range_]
@@ -72,6 +77,36 @@ def _fetch_yfinance(ticker: str, start: date | None) -> tuple[list[PricePoint], 
             )
         )
     return points, meta
+
+
+def _fetch_yfinance_intraday(ticker: str, period: str, interval: str) -> list[PricePoint]:
+    """Synchronous yfinance intraday call — run via asyncio.to_thread."""
+    import math
+
+    df = yf.Ticker(ticker).history(period=period, interval=interval, auto_adjust=False)
+    if df.empty:
+        return []
+
+    def _nan_to_none(v: float) -> float | None:
+        return None if math.isnan(v) else v
+
+    points: list[PricePoint] = []
+    for idx, row in df.iterrows():
+        close = float(row["Close"])
+        if math.isnan(close):
+            continue
+        points.append(
+            PricePoint(
+                date=idx.strftime("%Y-%m-%dT%H:%M:%S"),
+                open=_nan_to_none(float(row["Open"])),
+                high=_nan_to_none(float(row["High"])),
+                low=_nan_to_none(float(row["Low"])),
+                close=close,
+                adj_close=_nan_to_none(float(row.get("Adj Close", row["Close"]))),
+                volume=int(row["Volume"]) if row["Volume"] and not math.isnan(float(row["Volume"])) else None,
+            )
+        )
+    return points
 
 
 def _is_cache_fresh(cached_dates: list[str]) -> bool:
@@ -146,6 +181,15 @@ def _read_cache(symbol: str, start: date | None) -> list[PricePoint]:
 async def get_prices(ticker: str, range_: str) -> list[PricePoint]:
     """Return OHLCV history for *ticker* over *range_*. Raises ValueError if not found."""
     ticker = ticker.upper()
+
+    # Intraday ranges bypass the daily Supabase cache (schema stores date-only strings)
+    if range_ in _INTRADAY_CONFIG:
+        cfg = _INTRADAY_CONFIG[range_]
+        points = await asyncio.to_thread(_fetch_yfinance_intraday, ticker, cfg["period"], cfg["interval"])
+        if not points:
+            raise ValueError(f"No data found for ticker '{ticker}'")
+        return points
+
     start = _range_start(range_)
 
     # --- Cache read ---

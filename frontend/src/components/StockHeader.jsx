@@ -158,9 +158,10 @@ export default function StockHeader({ ticker }) {
   const [currency, setCurrency] = useState('USD');
   const queryClient = useQueryClient();
 
-  const metaQ      = useQuery({ queryKey: ['meta', ticker],         queryFn: () => api.getStock(ticker) });
-  const pricesQ    = useQuery({ queryKey: ['prices', ticker, '1m'], queryFn: () => api.getPrices(ticker, '1m') });
-  const fundQ      = useQuery({ queryKey: ['fundamentals', ticker], queryFn: () => api.getFundamentals(ticker) });
+  const metaQ        = useQuery({ queryKey: ['meta', ticker],         queryFn: () => api.getStock(ticker) });
+  const pricesQ      = useQuery({ queryKey: ['prices', ticker, '1m'], queryFn: () => api.getPrices(ticker, '1m') });
+  const intraday1gQ  = useQuery({ queryKey: ['prices', ticker, '1g'], queryFn: () => api.getPrices(ticker, '1g') });
+  const fundQ        = useQuery({ queryKey: ['fundamentals', ticker], queryFn: () => api.getFundamentals(ticker) });
   const watchlistQ = useQuery({ queryKey: ['watchlist'],            queryFn: api.getWatchlist });
   const fxQ        = useQuery({
     queryKey: ['exchange-rate'],
@@ -205,8 +206,25 @@ export default function StockHeader({ ticker }) {
   }
 
   const meta = metaQ.data;
-  const { price, changePct, changeAbs, volume } = deriveQuote(pricesQ.data);
   const fund = fundQ.data;
+
+  // Price and change: intraday last candle vs daily yesterday close.
+  // Mirrors PriceChart's calcRangePct formula for '1g', ensuring both cells
+  // always show the same number from the same source.
+  const daily1m      = pricesQ.data;
+  const intraday1g   = intraday1gQ.data;
+  const lastIntraday   = intraday1g && intraday1g.length > 0 ? intraday1g[intraday1g.length - 1] : null;
+  const yesterdayClose = daily1m && daily1m.length >= 2 ? daily1m[daily1m.length - 2].close : null;
+
+  const price     = lastIntraday?.close ?? null;
+  const changePct = price != null && yesterdayClose != null
+    ? ((price - yesterdayClose) / yesterdayClose) * 100
+    : null;
+  const changeAbs = price != null && yesterdayClose != null
+    ? price - yesterdayClose
+    : null;
+  // Volume from the daily series (intraday 5m candles carry only per-candle volume)
+  const volume = daily1m && daily1m.length > 0 ? daily1m[daily1m.length - 1].volume ?? null : null;
 
   const changePositive = changePct != null && changePct >= 0;
   const changeColor = changePct == null

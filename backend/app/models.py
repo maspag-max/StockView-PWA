@@ -116,6 +116,7 @@ class Fundamentals(BaseModel):
     fifty_two_week_low: float | None = None
     day_high: float | None = None
     day_low: float | None = None
+    previous_close: float | None = None
     total_revenue: int | None = None
     free_cashflow: int | None = None
     shares_outstanding: int | None = None

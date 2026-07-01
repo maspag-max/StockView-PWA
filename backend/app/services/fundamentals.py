@@ -53,6 +53,7 @@ def _info_to_fundamentals(ticker: str, info: dict) -> Fundamentals:
         fifty_two_week_low=_float("fiftyTwoWeekLow"),
         day_high=_float("dayHigh"),
         day_low=_float("dayLow"),
+        previous_close=_float("previousClose"),
         total_revenue=_int("totalRevenue"),
         free_cashflow=_int("freeCashflow"),
         shares_outstanding=_int("sharesOutstanding"),

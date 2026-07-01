@@ -41,6 +41,18 @@ function calcPct(prices) {
   return ((last - first) / first) * 100;
 }
 
+// For "1g" the meaningful base is yesterday's close (previousClose), not the
+// first intraday candle — so this aligns with the "Oggi" cell in StockHeader.
+function calcRangePct(prices, rangeKey, previousClose) {
+  if (!prices || prices.length < 2) return null;
+  const last = prices[prices.length - 1].close;
+  if (rangeKey === '1g') {
+    if (previousClose == null) return null;
+    return ((last - previousClose) / previousClose) * 100;
+  }
+  return ((last - prices[0].close) / prices[0].close) * 100;
+}
+
 function fmtPct(pct) {
   return (pct >= 0 ? '+' : '') + pct.toFixed(1).replace('.', ',') + '%';
 }
@@ -76,6 +88,13 @@ export default function PriceChart({ ticker }) {
     enabled:  maxEnabled,
   });
 
+  // Fundamentals — reuses the shared cache already populated by StockHeader.
+  const fundQuery = useQuery({
+    queryKey: ['fundamentals', ticker],
+    queryFn:  () => api.getFundamentals(ticker),
+  });
+  const previousClose = fundQuery.data?.previous_close ?? null;
+
   const { data: prices, isLoading, isError } = rangeQueries[rangeIdx];
 
   const chartData = prices?.map((p) => ({
@@ -86,7 +105,7 @@ export default function PriceChart({ ticker }) {
 
   const rangeStats = RANGES.map((r, i) => ({
     label: LABELS[i],
-    pct:   calcPct(rangeQueries[i].data),
+    pct:   calcRangePct(rangeQueries[i].data, r, previousClose),
   }));
 
   return (
@@ -100,7 +119,7 @@ export default function PriceChart({ ticker }) {
           <TabGroup index={rangeIdx} onIndexChange={setRangeIdx}>
             <TabList variant="solid">
               {RANGES.map((r, i) => {
-                const pct = calcPct(rangeQueries[i].data);
+                const pct = calcRangePct(rangeQueries[i].data, r, previousClose);
                 return (
                   <Tab key={r} className="text-xs !px-2 !py-0.5 flex flex-col items-center gap-0">
                     <span className="leading-tight">{LABELS[i]}</span>

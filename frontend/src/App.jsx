@@ -14,6 +14,7 @@ import ThesisEditor from './components/ThesisEditor';
 import NarrativeSection from './components/NarrativeSection';
 import LoginPage from './pages/LoginPage';
 import AlertsPage from './pages/AlertsPage';
+import ComparePage from './pages/ComparePage';
 
 // ---------------------------------------------------------------------------
 // Query client
@@ -114,6 +115,7 @@ export default function App() {
               <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
               <Route path="/stock/:ticker" element={<ProtectedRoute><StockPage /></ProtectedRoute>} />
               <Route path="/alerts" element={<ProtectedRoute><AlertsPage /></ProtectedRoute>} />
+              <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

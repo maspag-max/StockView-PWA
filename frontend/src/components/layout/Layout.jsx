@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import NavBar from './NavBar';
 import ThemeToggle from './ThemeToggle';
@@ -38,8 +38,9 @@ function SidebarContent({ onNav }) {
   const { user, signOut } = useAuth();
 
   const navItems = [
-    { to: '/', icon: <HomeIcon className="w-4 h-4 shrink-0" />, label: 'Home' },
-    { to: '/alerts', icon: <Bell className="w-4 h-4 shrink-0" />, label: 'Alert' },
+    { to: '/',        icon: <HomeIcon className="w-4 h-4 shrink-0" />,  label: 'Home' },
+    { to: '/compare', icon: <BarChart3 className="w-4 h-4 shrink-0" />, label: 'Confronta' },
+    { to: '/alerts',  icon: <Bell className="w-4 h-4 shrink-0" />,      label: 'Alert' },
   ];
 
   async function handleSignOut() {
@@ -130,8 +131,9 @@ export default function Layout({ children }) {
   const location = useLocation();
 
   const bottomNavItems = [
-    { to: '/', label: 'Home', icon: HomeIcon },
-    { to: '/alerts', label: 'Alert', icon: Bell },
+    { to: '/',        label: 'Home',      icon: HomeIcon },
+    { to: '/compare', label: 'Confronta', icon: BarChart3 },
+    { to: '/alerts',  label: 'Alert',     icon: Bell },
   ];
 
   function closeDrawer() {
